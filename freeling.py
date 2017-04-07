@@ -10,7 +10,6 @@ import argparse  # To parse command line arguments
 import time
 import fnmatch  # To match files by pattern
 
-
 def timeit(method):
     """Time functions."""
     def timed(*args, **kw):
@@ -34,7 +33,13 @@ class freelingWrapper(object):
 
     def __str__(self):
         """Print final message."""
-        message = [str(len(self.infiles)),"files processed!"]
+        nfiles = len(self.infiles)
+        if nfiles == 1:
+            message = [str(nfiles),"file processed!"]
+        elif nfiles == 0:
+            message = ["no file processed!"]
+        else:
+            message = [str(nfiles),"files processed!"]
         return " ".join(message)
 
     def cliparser(self):
@@ -69,6 +74,13 @@ class freelingWrapper(object):
             "--element",
             required=True,
             help="element where text to be processed is contained")
+        parser.add_argument(
+            "-o",
+            "--oformat",
+#             required=True,
+            default = 'flg',
+            choices=['flg','vrt'],
+            help="output format")
         args = parser.parse_args()
         self.indir = args.source
         self.outdir = args.target
@@ -79,6 +91,7 @@ class freelingWrapper(object):
         self.port = args.port
         self.sentence = args.sentence
         self.element = args.element
+        self.oformat = args.oformat
         pass
 
     def get_files(self, directory, fileclue):
@@ -144,6 +157,10 @@ class freelingWrapper(object):
             r"(</{}>)".format(self.element),
             r"\n\1",
             tree)
+        tree = re.sub(
+            r"(>)([^.])",
+            r"\1\n\2",
+            tree)
         tree = re.sub(  # remove unnecessary empty lines
             r"\n\n+",
             r"\n",
@@ -161,9 +178,20 @@ class freelingWrapper(object):
             os.makedirs(self.outdir)
         outpath = os.path.join(  # output path
             self.outdir,
-            os.path.splitext(os.path.basename(infile))[0]+'.vrt')  # depending on the output formats able to choose output extension
+            os.path.splitext(os.path.basename(infile))[0]+'.'+self.oformat)  # depending on the output formats able to choose output extension
         with open(outpath, mode='w', encoding='utf8') as outfile:
             outfile.write(tree_as_string)
+        pass
+    
+    def flg_to_vrt(self, tree):
+        """Transform FreeLing output to VRT."""
+        if self.sentence == True:
+            sentences = tree.findall('.//{}'.format(self.element))
+        else:
+            sentences = tree.findall('.//{s}')
+        for sentence in sentences:
+            sentence.text = re.sub(r' ', r'\t', sentence.text) # to get VRT directly
+            sentence.text = re.sub(r'\t\d(\.\d+)?$', r'', sentence.text, flags=re.MULTILINE) # to remove probability
         pass
 
     def main(self):
@@ -192,8 +220,6 @@ class freelingWrapper(object):
                         element.text = None
                         for sentence in sentences:
 #                             sentence = re.sub(r'^(-se?) .+$',r'\1 se P0300000 1',sentence, flags=re.MULTILINE) # for Catalan
-#                             sentence = re.sub(r' ', r'\t', sentence) # to get VRT directly
-#                             sentence = re.sub(r'\t\d(\.\d+)?$', r'', sentence, flags=re.MULTILINE) # to remove probability
                             s_element = etree.SubElement(
                                 element,
                                 "s",
@@ -201,6 +227,8 @@ class freelingWrapper(object):
                                     str(sentence_counter))})
                             s_element.text = u'\n{}\n'.format(sentence)
                             sentence_counter += 1
-            output = self.deprettyfy(tree)  # this step might be optional, not really needed for CQP
+            if self.oformat == 'vrt':
+                self.flg_to_vrt(tree)
+            output = self.deprettyfy(tree)
             self.serialize(output, i)
 print(freelingWrapper())
