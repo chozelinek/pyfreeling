@@ -1,6 +1,6 @@
 # PyFreeLing
 
-This is the documentation for a wrapper for FreeLing 4. This wrapper was developed to ease the processing of texts for my PhD. It is written in Python 3 and tested on Mac OS X Sierra.
+This is the documentation for a wrapper for FreeLing 4. This wrapper was developed to ease the processing of texts for my PhD. It is written in Python 3 and tested on macOS Sierra.
 
 This project was started to meet my own needs. I don't plan to include extra features upon request. I don't provide any kind of support, specially regarding other platforms. But feel free to fork, clone and play with the code.
 
@@ -8,15 +8,19 @@ This project was started to meet my own needs. I don't plan to include extra fea
 
 ```
 ├── README.md
-├── config/ - folder to save analyzer's configuration files
-├── freeling.py - general wrapper
-└── freeling_constituency.py - wrapper for constituency parsing
+├── config
+├── freeling.py
+├── freeling_constituency.py
+├── test
+└── test_freeling.sh
 ```
 
 - `README.md`: this documentation
 - `config/`: folder containing different analyzer's configuration files
 - `freeling.py`: general wrapper for `VRT`, `XML` or plain text input formats outputing `VRT` or `CONLL` formats. <!-- this could be a script to serialize in VRT/XML format, each layer in a different VRT file, or in CONLL format, all in one tab/space-separated file. -->
 - `freeling_constituents.py`, the wrapper for `vrt` input, `xml` output. The aim is to get constituency parsing in XML format. <!-- this could be a script to serialize layers in XML format like constituents -->
+- `test/`: folder containing test data.
+- `test_freeling.sh`: shell script to test English and Spanish basic processing.
 <!-- We might need utilities to retokenize MWE in to individual tokens and keep MWE information as XML annotation -->
 <!-- We need examples and tests. -->
 
@@ -30,8 +34,6 @@ There are 4 types of dependencies:
 - [lxml](http://lxml.de), a Python library to work with XML
 - [libxml2](http://xmlsoft.org) and [libxslt](http://xmlsoft.org/libxslt) C libraries which are dependencies of `lxml`
 
-<!-- instructions -->
-
 ### Install Homebrew
 
 Follow [Neil Gee's guide](https://coolestguidesontheplanet.com/installing-homebrew-on-macos-sierra-package-manager-for-unix-apps) to install and set up homebrew for Mac OS Sierra
@@ -44,7 +46,7 @@ Use Homebrew to install FreeLing by running this command:
 brew install freeling
 ```
 
-Homebrew will take care of any dependences.
+Homebrew will take care of any dependencies.
 
 ### Install Python 3
 
@@ -58,7 +60,7 @@ brew install python3
 
 ### Install libxml2 and libxslt
 
-MacOS already provides `libxml2` and `libxslt`. They can be installed through Homebrew though:
+macOS Sierra already provides `libxml2` and `libxslt`. They can be installed through Homebrew though:
 
 ```shell
 brew install libxml2
@@ -75,36 +77,58 @@ pip3 install lxml
 
 ## Using PyFreeLing
 
-Once you have installed FreeLing and all the depedencies, you will always do two things:
+Once you have installed FreeLing and all the dependencies, you will always do two things:
 
 1. start a FreeLing analyzer in server mode
 1. run the wrapper script
 
 ### Starting a FreeLing analyzer in server mode
 
-As our wrapper is devised to process batches of files and each file can be splitted into smaller text units, we want to avoid the downtime of loading parameters for each (chunck of) text to be processed. If we start a server, parameters are loaded only once.
+As our wrapper is devised to process batches of files and each file can be split into smaller text units, we want to avoid the downtime of loading parameters for each (chunk of) text to be processed. If we start a server, parameters are loaded only once.
 
-We have to start with its corresponding configuration, this configuration can be declared:
+The options of the server can be declared in a configuration file or via command line options. Command line options override configuration file's directives.
 
-1. in a file, or
-1. through command line options
+For more details check the FreeLing documentation for the [analyzer](https://talp-upc.gitbooks.io/freeling-user-manual/content/analyzer.html).
 
-#### Configuration files
+A server to analyze texts in English with default options can be invoked with the following command:
 
-Configuration files help to set up options by default.
+```shell
+analyze -f en.cfg --server --port 50005 &
+```
 
-Configuration file directives are overriden by command line options. Command line options is a more flexible approach.
+You will see after a few seconds in the terminal window some information (like how to stop the server). Keep that terminal window open to monitor the server.
 
-<!-- do we need the configuration files or can I just provide a series of examples to start servers? -->
+### Usage of freeling.py
 
-features | spa.cfg | eng.cfg
----|---|---
-Language | spa | eng
+Once a server is up and running we can use `freeling.py` to process the files. Below is an explanation of the options that can be passed to the wrapper.
 
+```
+usage: freeling.py [-h] -s SOURCE -t TARGET -p PORT [-f FPATTERN] [--sentence] -e ELEMENT
+                   [-o {flg,vrt}]
 
-#### Server list
+optional arguments:
+  -h, --help            show this help message and exit
+  -s SOURCE, --source SOURCE
+                        path to directory where the source files are located.
+  -t TARGET, --target TARGET
+                        path to the directory where the translations are located.
+  -p PORT, --port PORT  port number of the FreeLing server.
+  -f FPATTERN, --fpattern FPATTERN
+                        pattern to find the relevant files.
+  --sentence            if provided sentences are already tagged as XML.
+  -e ELEMENT, --element ELEMENT
+                        element where text to be processed is contained
+  -o {flg,vrt}, --oformat {flg,vrt}
+                        output format
+```
 
-All server configurations as reference for future use.
+And this would be an example to process a text in English with an analyzer running with the default configuration:
+
+```
+python freeling.py -s ./test/en/ -t ./test/en/output/ -p 50005 -f "*_w_sentences.xml" --sentence -e s -o vrt
+```
+
+## Examples
 
 port | config | lang | command | requires | yields
 ---|---|---|---|---|---
@@ -113,28 +137,6 @@ port | config | lang | command | requires | yields
 50110 | eng | eng.cfg | `analyze -f ~/Projects/freeling/config/eng2.cfg --server --port 50106 &` | sentence | token, POS, lemma, probability
 50210 | spa | spa.cfg | `analyze -f ~/Projects/freeling/config/spa2.cfg --server --port 50202 &` | sentence | token, POS, lemma, probability
 
-### Usage of freeling.py
-
-```
-usage: freeling.py [-h] -s SOURCE -t TARGET -p PORT [-f FPATTERN] [--sentence]
-                   -e ELEMENT
-
-optional arguments:
-  -h, --help            show this help message and exit
-  -s SOURCE, --source SOURCE
-                        path to directory where the source files are located.
-  -t TARGET, --target TARGET
-                        path to the directory where the translations are
-                        located.
-  -p PORT, --port PORT  port number of the FreeLing server.
-  -f FPATTERN, --fpattern FPATTERN
-                        pattern to find the relevant files.
-  --sentence            if provided sentences are already tagged as XML.
-  -e ELEMENT, --element ELEMENT
-                        element where text to be processed is contained
-```
-
-## Examples
 
 ### With MWEs
 
@@ -238,3 +240,8 @@ Expected string input is one token per line?
     - `flg` (default output by FreeLing),
     - `vrt` (VRT for CWB),
     - `conll` (as outputed by FreeLing)
+
+## Source of test texts
+
+- English: [European Parliament debate intervention by Raül Romeva i Rueda](http://www.europarl.europa.eu/sides/getDoc.do?pubRef=-//EP//TEXT+CRE+20090504+ITEM-016+DOC+XML+V0//EN&query=INTERV&detail=1-088)
+- Spanish: [European Parliament debate intervention by Raül Romeva i Rueda](http://www.europarl.europa.eu/sides/getDoc.do?pubRef=-//EP//TEXT+CRE+20090504+ITEM-016+DOC+XML+V0//ES&query=INTERV&detail=1-088)
