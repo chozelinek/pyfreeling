@@ -77,7 +77,6 @@ class freelingWrapper(object):
         parser.add_argument(
             "-o",
             "--oformat",
-#             required=True,
             default = 'flg',
             choices=['flg','vrt'],
             help="output format")
@@ -188,7 +187,7 @@ class freelingWrapper(object):
         if self.sentence == True:
             sentences = tree.findall('.//{}'.format(self.element))
         else:
-            sentences = tree.findall('.//{s}')
+            sentences = tree.findall('.//s')
         for sentence in sentences:
             sentence.text = re.sub(r' ', r'\t', sentence.text) # to get VRT directly
             sentence.text = re.sub(r'\t\d(\.\d+)?$', r'', sentence.text, flags=re.MULTILINE) # to remove probability
@@ -213,20 +212,13 @@ class freelingWrapper(object):
                 if len(elements) == 0:
                     sys.exit('I cannot find any "{}"'.format(self.element))
                 else:
-                    sentence_counter = 0
                     for element in elements:
                         sentences = self.process_with_freeling(
                             element.text.strip('\n')).split('\n\n')
                         element.text = None
                         for sentence in sentences:
-#                             sentence = re.sub(r'^(-se?) .+$',r'\1 se P0300000 1',sentence, flags=re.MULTILINE) # for Catalan
-                            s_element = etree.SubElement(
-                                element,
-                                "s",
-                                attrib={'id':'s_{}'.format(
-                                    str(sentence_counter))})
+                            s_element = etree.SubElement(element, "s")
                             s_element.text = u'\n{}\n'.format(sentence)
-                            sentence_counter += 1
             if self.oformat == 'vrt':
                 self.flg_to_vrt(tree)
             output = self.deprettyfy(tree)
