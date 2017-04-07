@@ -1,4 +1,5 @@
 #!/bin/bash
+cd ../
 # start the server for English default
 echo 'Starting server for English in ...'
 osascript -e 'tell app "Terminal" to do script "analyze -f en.cfg --server --port 50005 &"'
