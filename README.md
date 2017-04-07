@@ -234,3 +234,7 @@ Expected string input is one token per line?
 ## TO DO / Wish list
 
 - readers/writers for different formats VRT, XML, TCF
+- implement output formats for processed text:
+    - `flg` (default output by FreeLing),
+    - `vrt` (VRT for CWB),
+    - `conll` (as outputed by FreeLing)
