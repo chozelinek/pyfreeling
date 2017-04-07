@@ -1,33 +1,202 @@
-# PyFreeLing3
+# PyFreeLing
 
-This is the documentation for a FreeLing wrapper written in Python.
+This is the documentation for a wrapper for FreeLing 4. This wrapper was developed to ease the processing of texts for my PhD. It is written in Python 3 and tested on Mac OS X Sierra.
 
-The main purpose of this software is to process (Spanish) texts with FreeLing.
+This project was started to meet my own needs. I don't plan to include extra features upon request. I don't provide any kind of support, specially regarding other platforms. But feel free to fork, clone and play with the code.
 
-# Dependencies
+## Contents
+
+```
+├── README.md
+├── config/ - folder to save analyzer's configuration files
+├── freeling.py - general wrapper
+└── freeling_constituency.py - wrapper for constituency parsing
+```
+
+- `README.md`: this documentation
+- `config/`: folder containing different analyzer's configuration files
+- `freeling.py`: general wrapper for `VRT`, `XML` or plain text input formats outputing `VRT` or `CONLL` formats. <!-- this could be a script to serialize in VRT/XML format, each layer in a different VRT file, or in CONLL format, all in one tab/space-separated file. -->
+- `freeling_constituents.py`, the wrapper for `vrt` input, `xml` output. The aim is to get constituency parsing in XML format. <!-- this could be a script to serialize layers in XML format like constituents -->
+<!-- We might need utilities to retokenize MWE in to individual tokens and keep MWE information as XML annotation -->
+<!-- We need examples and tests. -->
+
+## Setting up PyFreeLing in Mac OS Sierra
 
 There are 4 types of dependencies:
 
-- FreeLing 3.1 (install it via homebrew, it will take care of any depencies required), or in Ubuntu install it by downloading from SVN and compiling
-- Python 3
-- Python 3 modules
-- Dependencies of Python 3 modules
+- [Homebrew](https://brew.sh), a package manager to install software in Mac
+- [FreeLing](http://nlp.lsi.upc.edu/freeling), an open source language analysis tool suite
+- [Python 3](https://www.python.org)
+- [lxml](http://lxml.de), a Python library to work with XML
+- [libxml2](http://xmlsoft.org) and [libxslt](http://xmlsoft.org/libxslt) C libraries which are dependencies of `lxml`
 
-## Install in Mac OS X El Capitan
+<!-- instructions -->
 
-<!-- provide here the command line -->
+### Install Homebrew
 
-## Install FreeLing in Ubuntu
+Follow [Neil Gee's guide](https://coolestguidesontheplanet.com/installing-homebrew-on-macos-sierra-package-manager-for-unix-apps) to install and set up homebrew for Mac OS Sierra
 
-# Contents
+### Install FreeLing
 
-- docs: documentation about the FreeLingWrapper
-    - `FreeLingWrapper.Rmd`, this file
-- config: configuration files
-- `freeling.py`, the wrapper for `vrt` file input/output format, for Python 3, and FreeLing 3 and FreeLing 4 (this can be used for `conll` output format)
-- `freeling_constituents.py`, the wrapper for `vrt` input, `xml` output, for Python 3, and FreeLing 4, the aim is to get the text parsed for constituents in XML format.
+Use Homebrew to install FreeLing by running this command:
 
-# Specification
+```shell
+brew install freeling
+```
+
+Homebrew will take care of any dependences.
+
+### Install Python 3
+
+You can install Python 3 with Homebrew following the instructions from [The Hitchhiker's Guide to Python](http://python-guide-pt-br.readthedocs.io/en/latest/starting/install3/osx/) or following the very complete [Lisa Tagliaferri's guide](https://www.digitalocean.com/community/tutorials/how-to-install-python-3-and-set-up-a-local-programming-environment-on-macos).
+
+Basically:
+
+```shell
+brew install python3
+```
+
+### Install libxml2 and libxslt
+
+MacOS already provides `libxml2` and `libxslt`. They can be installed through Homebrew though:
+
+```shell
+brew install libxml2
+brew install libxslt
+```
+
+### Install lxml
+
+Now, you are ready to install `lxml`:
+
+```shell
+pip3 install lxml
+```
+
+## Using PyFreeLing
+
+Once you have installed FreeLing and all the depedencies, you will always do two things:
+
+1. start a FreeLing analyzer in server mode
+1. run the wrapper script
+
+### Starting a FreeLing analyzer in server mode
+
+As our wrapper is devised to process batches of files and each file can be splitted into smaller text units, we want to avoid the downtime of loading parameters for each (chunck of) text to be processed. If we start a server, parameters are loaded only once.
+
+We have to start with its corresponding configuration, this configuration can be declared:
+
+1. in a file, or
+1. through command line options
+
+#### Configuration files
+
+Configuration files help to set up options by default.
+
+Configuration file directives are overriden by command line options. Command line options is a more flexible approach.
+
+<!-- do we need the configuration files or can I just provide a series of examples to start servers? -->
+
+features | spa.cfg | eng.cfg
+---|---|---
+Language | spa | eng
+
+
+#### Server list
+
+All server configurations as reference for future use.
+
+port | config | lang | command | requires | yields
+---|---|---|---|---|---
+50100 | eng | eng.cfg | `analyze -f ~/Projects/freeling/config/eng1.cfg --sense ukb --server --port 50101 &` | token, lemma, POS | sense, WSD
+50200 | spa | spa.cfg | `analyze -f ~/Projects/freeling/config/spa1 .cfg --server --port 50201 &` | token, lemma, POS | sense, WSD
+50110 | eng | eng.cfg | `analyze -f ~/Projects/freeling/config/eng2.cfg --server --port 50106 &` | sentence | token, POS, lemma, probability
+50210 | spa | spa.cfg | `analyze -f ~/Projects/freeling/config/spa2.cfg --server --port 50202 &` | sentence | token, POS, lemma, probability
+
+### Usage of freeling.py
+
+```
+usage: freeling.py [-h] -s SOURCE -t TARGET -p PORT [-f FPATTERN] [--sentence]
+                   -e ELEMENT
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -s SOURCE, --source SOURCE
+                        path to directory where the source files are located.
+  -t TARGET, --target TARGET
+                        path to the directory where the translations are
+                        located.
+  -p PORT, --port PORT  port number of the FreeLing server.
+  -f FPATTERN, --fpattern FPATTERN
+                        pattern to find the relevant files.
+  --sentence            if provided sentences are already tagged as XML.
+  -e ELEMENT, --element ELEMENT
+                        element where text to be processed is contained
+```
+
+## Examples
+
+### With MWEs
+
+#### start the appropriate server
+
+```bash
+analyze -f ~/Projects/freeling/config/spa1.cfg --server --port 50201 &
+```
+
+#### run the wrapper
+
+```bash
+python freeling.py -s ~/Dropbox/PhD/TraDiCorp/tt/ep2/ori/ -t ./freeling1 -p 50201 -f "*.xml" --sentence -e s
+```
+
+### Without MWEs
+
+FreeLing 2 is for us the annotation with all MWEs modules deactivated
+
+#### start the appropriate server
+
+```bash
+analyze -f ~/Projects/freeling/config/spa2.cfg --server --port 50202 &
+```
+
+#### run the wrapper
+
+```bash
+python freeling.py -s ~/Dropbox/PhD/TraDiCorp/tt/ep2/ori/ -t ./freeling2 -p 50202 -f "*.xml" --sentence -e s
+```
+
+## FreeLing 4
+
+FreeLing 3 is for us the annotation with all MWEs modules deactivated and returning the parsed constituents tree
+
+### start the appropriate server
+
+```bash
+analyze -f /media/sf_Projects/freeling/config/eng4.cfg --inplv text --input text --outlv parsed --output xml --server --port 50107&
+```
+
+```bash
+analyze -f /media/sf_Projects/freeling/config/en.cfg --inplv text --input text --outlv parsed --output xml --server --port 50109&
+```
+
+or
+
+```bash
+analyze -f /media/sf_Projects/freeling/config/eng4.cfg --inplv text --input text --outlv parsed --output conll --server --port 50108&
+```
+
+### run the wrapper
+
+```bash
+python freeling_constituents.py -s /media/sf_PhD/TraDiCorp/st/ori/ -t /media/sf_PhD/TraDiCorp/st/flg3/ -p 50107 -f "*.xml" --sentence -e s
+```
+
+```bash
+python freeling.py -s /media/sf_PhD/TraDiCorp/st/ori/ -t /media/sf_PhD/TraDiCorp/st/flg3/ -p 50108 -f "*.xml" --sentence -e s
+```
+
+## Specification
 
 The wrapper expects a FreeLing server running. The server can be invoked either using a configuration file or command line options. A combination of configuration file and command line options should offer full control.
 
@@ -62,115 +231,6 @@ For as it is only relevant to know what strings we have to give to FreeLing.
 
 Expected string input is one token per line?
 
+## TO DO / Wish list
 
-# Configuration files
-
-Configuration files help to set up options by default.
-
-Configuration file directives are overriden by command line options. Command line options is a more flexible approach.
-
-features | spa.cfg | eng.cfg
----|---|---
-Language | spa | eng
-
-
-# Server list
-
-All server configurations as reference for future use.
-
-port | config | lang | command | requires | yields
----|---|---|---|---|---
-50100 | eng | eng.cfg | `analyze -f ~/Projects/freeling/config/eng1.cfg --sense ukb --server --port 50101 &` | token, lemma, POS | sense, WSD
-50200 | spa | spa.cfg | `analyze -f ~/Projects/freeling/config/spa1 .cfg --server --port 50201 &` | token, lemma, POS | sense, WSD
-50110 | eng | eng.cfg | `analyze -f ~/Projects/freeling/config/eng2.cfg --server --port 50106 &` | sentence | token, POS, lemma, probability
-50210 | spa | spa.cfg | `analyze -f ~/Projects/freeling/config/spa2.cfg --server --port 50202 &` | sentence | token, POS, lemma, probability
-
-# Examples
-
-# getting FreeLing 1 annotation
-
-FreeLing 1 is for us the annotation with all MWEs modules activated
-
-## start the appropriate server
-
-```bash
-analyze -f ~/Projects/freeling/config/spa1.cfg --server --port 50201 &
-```
-
-## run the wrapper
-
-```bash
-python freeling.py -s ~/Dropbox/PhD/TraDiCorp/tt/ep2/ori/ -t ./freeling1 -p 50201 -f "*.xml" --sentence -e s
-```
-
-# getting FreeLing 2 annotation
-
-FreeLing 2 is for us the annotation with all MWEs modules deactivated
-
-## start the appropriate server
-
-```bash
-analyze -f ~/Projects/freeling/config/spa2.cfg --server --port 50202 &
-```
-
-## run the wrapper
-
-```bash
-python freeling.py -s ~/Dropbox/PhD/TraDiCorp/tt/ep2/ori/ -t ./freeling2 -p 50202 -f "*.xml" --sentence -e s
-```
-
-# getting FreeLing 3 annotation
-
-FreeLing 3 is for us the annotation with all MWEs modules deactivated and returning the parsed constituents tree
-
-## start the appropriate server
-
-```bash
-analyze -f /media/sf_Projects/freeling/config/eng4.cfg --inplv text --input text --outlv parsed --output xml --server --port 50107&
-```
-
-```bash
-analyze -f /media/sf_Projects/freeling/config/en.cfg --inplv text --input text --outlv parsed --output xml --server --port 50109&
-```
-
-or
-
-```bash
-analyze -f /media/sf_Projects/freeling/config/eng4.cfg --inplv text --input text --outlv parsed --output conll --server --port 50108&
-```
-
-## run the wrapper
-
-```bash
-python freeling_constituents.py -s /media/sf_PhD/TraDiCorp/st/ori/ -t /media/sf_PhD/TraDiCorp/st/flg3/ -p 50107 -f "*.xml" --sentence -e s
-```
-
-```bash
-python freeling.py -s /media/sf_PhD/TraDiCorp/st/ori/ -t /media/sf_PhD/TraDiCorp/st/flg3/ -p 50108 -f "*.xml" --sentence -e s
-```
-
-
-# Usage
-
-```
-usage: freeling.py [-h] -s SOURCE -t TARGET -p PORT [-f FPATTERN] [--sentence]
-                   -e ELEMENT
-
-optional arguments:
-  -h, --help            show this help message and exit
-  -s SOURCE, --source SOURCE
-                        path to directory where the source files are located.
-  -t TARGET, --target TARGET
-                        path to the directory where the translations are
-                        located.
-  -p PORT, --port PORT  port number of the FreeLing server.
-  -f FPATTERN, --fpattern FPATTERN
-                        pattern to find the relevant files.
-  --sentence            if provided sentences are already tagged as XML.
-  -e ELEMENT, --element ELEMENT
-                        element where text to be processed is contained
-```
-
-# TO DO / Wish list
-
-It would be good to have readers/writters (VRT, XML, TCF).
+- readers/writers for different formats VRT, XML, TCF
