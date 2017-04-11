@@ -78,7 +78,7 @@ class freelingWrapper(object):
             "-o",
             "--oformat",
             default = 'flg',
-            choices=['flg','vrt'],
+            choices=['flg','vrt','conll'],
             help="output format")
         args = parser.parse_args()
         self.indir = args.source
