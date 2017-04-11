@@ -10,7 +10,6 @@ This project was started to meet my own needs. I don't plan to include extra fea
 ├── README.md
 ├── config
 ├── freeling.py
-├── freeling_constituency.py
 ├── test
 └── test_freeling.sh
 ```
@@ -18,7 +17,6 @@ This project was started to meet my own needs. I don't plan to include extra fea
 - `README.md`: this documentation
 - `config/`: folder containing different analyzer's configuration files
 - `freeling.py`: general wrapper for `VRT`, `XML` or plain text input formats outputing `VRT` or `CONLL` formats. <!-- this could be a script to serialize in VRT/XML format, each layer in a different VRT file, or in CONLL format, all in one tab/space-separated file. -->
-- `freeling_constituents.py`, the wrapper for `vrt` input, `xml` output. The aim is to get constituency parsing in XML format. <!-- this could be a script to serialize layers in XML format like constituents -->
 - `test/`: folder containing test data.
 - `test_freeling.sh`: shell script to test English and Spanish basic processing.
 <!-- We might need utilities to retokenize MWE in to individual tokens and keep MWE information as XML annotation -->
@@ -168,7 +166,7 @@ port | command | requires | yields
 50122 | `analyze -f ./config/en_mwe.cfg --output xml --server --port 50102 &` | text | token, lemma, POS
 50123 | `analyze -f ./config/en_mwe_nec.cfg --output xml --server --port 50103 &` | text | token, lemma, POS
 50124 | `analyze -f ./config/en_mwe_nec.cfg --sense ukb --input freeling --inplv tagged --output xml --server --port 50104 &` | token, lemma, POS | WSD
-50125 | `analyze -f ./config/en_mwe_nec.cfg --input freeling --inplv tagged --outlv shallow --output xml --server --port 50105 &` | token, lemma, POS | constituency
+50125 | `analyze -f ./config/en_mwe_nec.cfg --input freeling --inplv tagged --outlv shallow --output xml --server --port 50125 &` | token, lemma, POS | constituency
 50126 | `analyze -f ./config/en_mwe_nec.cfg --input freeling --inplv tagged --outlv dep --output xml --server --port 50106 &` | token, lemma, POS | dependency
 50201 | `analyze -f ./config/es_nomwe.cfg --server --port 50201 &` | sentence | token, lemma, POS
 50202 | `analyze -f ./config/es_mwe.cfg --server --port 50202 &` | sentence | token, lemma, POS
@@ -242,18 +240,18 @@ analyze -f ./config/es_mwe_nec.cfg --server --port 50203 &
 
 ```bash
 # English
-python freeling.py -s en/ -t ./test/en/tmp_output/mwe -p 50103 -f "*w_sentences.xml" --sentence -e s -o flg
+python freeling.py -s ./test/en/ -t ./test/en/tmp_output/mwe -p 50103 -f "*w_sentences.xml" --sentence -e s -o flg
 # Spanish
-python freeling.py -s es/ -t ./test/es/tmp_output/mwe -p 50203 -f "*w_sentences.xml" --sentence -e s -o flg
+python freeling.py -s ./testes/ -t ./test/es/tmp_output/mwe -p 50203 -f "*w_sentences.xml" --sentence -e s -o flg
 ```
 
 #### run the wrapper: output VRT
 
 ```bash
 # English
-python freeling.py -s en/ -t ./test/en/tmp_output/mwe -p 50103 -f "*w_sentences.xml" --sentence -e s -o vrt
+python freeling.py -s ./test/en/ -t ./test/en/tmp_output/mwe -p 50103 -f "*w_sentences.xml" --sentence -e s -o vrt
 # Spanish
-python freeling.py -s es/ -t ./test/es/tmp_output/mwe -p 50203 -f "*w_sentences.xml" --sentence -e s -o vrt
+python freeling.py -s ./test/es/ -t ./test/es/tmp_output/mwe -p 50203 -f "*w_sentences.xml" --sentence -e s -o vrt
 ```
 
 ### Output in CONLL format
@@ -435,7 +433,27 @@ python freeling.py -s ./test/es/tmp_output/mwe -t ./test/es/tmp_output/wsd -p 50
 
 #### start server
 
+```bash
+# English
+analyze -f ./config/en_mwe_nec.cfg --outlv shallow --output xml --server --port 50125 &
+# Spanish
+analyze -f ./config/es_mwe_nec.cfg --outlv shallow --output xml --server --port 50225 &
+```
+
 #### run the wrapper
+
+```bash
+# English
+# with sentences preannoted
+python freeling.py -s ./test/en/ -t ./test/en/tmp_output/shallow -p 50125 -f "*w_sentences.xml" --sentence -e s -o xml --constituency
+# without sentences preannotated
+python freeling.py -s ./test/en/ -t ./test/en/tmp_output/shallow -p 50125 -f "*wo_sentences.xml" -e p -o xml --constituency
+# Spanish
+# with sentences preannotated
+python freeling.py -s ./test/es/ -t ./test/es/tmp_output/shallow -p 50225 -f "*w_sentences.xml" --sentence -e s -o xml --constituency
+# without sentences preannotated
+python freeling.py -s ./test/es/ -t ./test/es/tmp_output/shallow -p 50125 -f "*wo_sentences.xml" -e p -o xml --constituency
+```
 
 ### Output in CONLL
 

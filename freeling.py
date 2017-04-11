@@ -78,8 +78,13 @@ class freelingWrapper(object):
             "-o",
             "--oformat",
             default = 'flg',
-            choices=['flg','vrt','conll'],
+            choices=['flg','vrt','conll','xml'],
             help="output format")
+        parser.add_argument(
+            "--constituency",
+            action='store_true',
+            help="if provided output are constituents. Only meaningful in combination with --oformat xml."
+            )
         args = parser.parse_args()
         self.indir = args.source
         self.outdir = args.target
@@ -91,6 +96,7 @@ class freelingWrapper(object):
         self.sentence = args.sentence
         self.element = args.element
         self.oformat = args.oformat
+        self.constituency = args.constituency
         pass
 
     def get_files(self, directory, fileclue):
@@ -192,6 +198,69 @@ class freelingWrapper(object):
             sentence.text = re.sub(r' ', r'\t', sentence.text) # to get VRT directly
             sentence.text = re.sub(r'\t\d(\.\d+)?$', r'', sentence.text, flags=re.MULTILINE) # to remove probability
         pass
+    
+    def get_leafs(self, sentence):
+        """Get leaf nodes from constituency tree.
+        
+        Keyword arguments:
+        sentence -- XML element containing a parsed sentence
+        """
+        counter = 0
+        nodes = sentence.find('./constituents/node')
+        s = etree.Element('s')
+        s.append(nodes)
+        leafs = s.findall('.//node[@leaf]')
+        for leaf in leafs:
+            ancestors = leaf.iterancestors(tag='node')
+            depth = sum([1 for x in ancestors])
+            if re.match(r'.+_.+',leaf.attrib['word']):
+                words = leaf.attrib['word'].split('_')
+                leaf.attrib['word'] = words[0]
+                leaf.attrib['token'] = 't_'+str(counter)
+                leaf.attrib['depth'] = str(depth)
+                leaf.text = '\n{}\n'.format(words[0])
+                counter += 1
+                parent = leaf.getparent()
+                leaf_counter = 2
+                for word in words[1:]:
+                    child = etree.SubElement(parent, 'node')
+                    child.text = '\n{}\n'.format(word)
+                    child.attrib['leaf'] = str(leaf_counter)
+                    leaf_counter += 1
+                    child.attrib['token'] = 't_'+str(counter)
+                    counter += 1
+                    child.attrib['word'] = word
+                    child.attrib['depth'] = str(depth)
+                    if 'head' in leaf.attrib:
+                        child.attrib['head'] = leaf.attrib['head']
+            else:
+                leaf.text = '\n{}\n'.format(leaf.attrib['word'])
+                leaf.attrib['depth'] = str(depth)
+                leaf.attrib['token'] = 't_'+str(counter)
+                counter += 1
+        return s
+                
+    def get_constituency(self, element):
+        """Get constituency parsing of the text contained in a XML element.
+        
+        Keyword arguments:
+        element -- XML element containing text to be parsed.
+        """
+        analysis = self.process_with_freeling(element.text.strip('\n'))
+        analysis = etree.fromstring('<analysis>'+analysis.strip('\n')+'</analysis>')
+        if self.sentence is True:
+            sentence = analysis.find('.//sentence')
+            element.text = None
+            parsed_sentence = self.get_leafs(sentence)
+            element.getparent().replace(element, parsed_sentence)
+        else:
+            sentences = analysis.findall('.//sentence')
+            new_sentences = []
+            for sentence in sentences:
+                new_sentences.append(self.get_leafs(sentence))
+            element.text = None
+            for new_sentence in new_sentences:
+                element.append(new_sentence)
 
     def main(self):
         """Process a batch of files with FreeLing."""
@@ -204,21 +273,31 @@ class freelingWrapper(object):
                     if s.text == None:  # remove sentence element if empty
                         s.getparent().remove(s)
                     else:
-                        s.text = u'{}'.format(
-                            self.process_with_freeling(
-                                s.text.strip('\n')))
+                        if self.oformat == 'xml' and self.constituency is True:
+                            self.get_constituency(s)
+                        elif self.oformat == 'xml':
+                            sys.exit("XML output only for constituency!")
+                        else:
+                            s.text = u'{}'.format(
+                                        self.process_with_freeling(
+                                            s.text.strip('\n')))
             else:
                 elements = tree.findall('.//{}'.format(self.element))
                 if len(elements) == 0:
                     sys.exit('I cannot find any "{}"'.format(self.element))
                 else:
                     for element in elements:
-                        sentences = self.process_with_freeling(
-                            element.text.strip('\n')).split('\n\n')
-                        element.text = None
-                        for sentence in sentences:
-                            s_element = etree.SubElement(element, "s")
-                            s_element.text = u'\n{}\n'.format(sentence)
+                        if self.oformat == 'xml' and self.constituency is True:
+                            self.get_constituency(element)
+                        elif self.oformat == 'xml':
+                            sys.exit("XML output only for constituency!")
+                        else:
+                            sentences = self.process_with_freeling(
+                                element.text.strip('\n')).split('\n\n')
+                            element.text = None
+                            for sentence in sentences:
+                                s_element = etree.SubElement(element, "s")
+                                s_element.text = u'\n{}\n'.format(sentence)
             if self.oformat == 'vrt':
                 self.flg_to_vrt(tree)
             output = self.deprettyfy(tree)
