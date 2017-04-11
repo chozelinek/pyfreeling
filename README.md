@@ -4,7 +4,7 @@ This is the documentation for a wrapper for FreeLing 4. This wrapper was develop
 
 This project was started to meet my own needs. I don't plan to include extra features upon request. I don't provide any kind of support, specially regarding other platforms. But feel free to fork, clone and play with the code.
 
-## Contents
+# Contents
 
 ```
 ├── README.md
@@ -24,7 +24,7 @@ This project was started to meet my own needs. I don't plan to include extra fea
 <!-- We might need utilities to retokenize MWE in to individual tokens and keep MWE information as XML annotation -->
 <!-- We need examples and tests. -->
 
-## Setting up PyFreeLing in Mac OS Sierra
+# Setting up PyFreeLing in Mac OS Sierra
 
 There are 4 types of dependencies:
 
@@ -34,55 +34,55 @@ There are 4 types of dependencies:
 - [lxml](http://lxml.de), a Python library to work with XML
 - [libxml2](http://xmlsoft.org) and [libxslt](http://xmlsoft.org/libxslt) C libraries which are dependencies of `lxml`
 
-### Install Homebrew
+## Install Homebrew
 
 Follow [Neil Gee's guide](https://coolestguidesontheplanet.com/installing-homebrew-on-macos-sierra-package-manager-for-unix-apps) to install and set up homebrew for Mac OS Sierra
 
-### Install FreeLing
+## Install FreeLing
 
 Use Homebrew to install FreeLing by running this command:
 
-```shell
+```bash
 brew install freeling
 ```
 
 Homebrew will take care of any dependencies.
 
-### Install Python 3
+## Install Python 3
 
 You can install Python 3 with Homebrew following the instructions from [The Hitchhiker's Guide to Python](http://python-guide-pt-br.readthedocs.io/en/latest/starting/install3/osx/) or following the very complete [Lisa Tagliaferri's guide](https://www.digitalocean.com/community/tutorials/how-to-install-python-3-and-set-up-a-local-programming-environment-on-macos).
 
 Basically:
 
-```shell
+```bash
 brew install python3
 ```
 
-### Install libxml2 and libxslt
+## Install libxml2 and libxslt
 
 macOS Sierra already provides `libxml2` and `libxslt`. They can be installed through Homebrew though:
 
-```shell
+```bash
 brew install libxml2
 brew install libxslt
 ```
 
-### Install lxml
+## Install lxml
 
 Now, you are ready to install `lxml`:
 
-```shell
+```bash
 pip3 install lxml
 ```
 
-## Using PyFreeLing
+# Using PyFreeLing
 
 Once you have installed FreeLing and all the dependencies, you will always do two things:
 
 1. start a FreeLing analyzer in server mode
 1. run the wrapper script
 
-### Starting a FreeLing analyzer in server mode
+## Starting a FreeLing analyzer in server mode
 
 As our wrapper is devised to process batches of files and each file can be split into smaller text units, we want to avoid the downtime of loading parameters for each (chunk of) text to be processed. If we start a server, parameters are loaded only once.
 
@@ -92,13 +92,31 @@ For more details check the FreeLing documentation for the [analyzer](https://tal
 
 A server to analyze texts in English with default options can be invoked with the following command:
 
-```shell
+```bash
 analyze -f en.cfg --server --port 50005 &
 ```
 
 You will see after a few seconds in the terminal window some information (like how to stop the server). Keep that terminal window open to monitor the server.
 
-### Usage of freeling.py
+### Most frequent FreeLing command line options
+
+option | meaning | default | values
+------|------------------------|---------|------------------------
+`--input` | Input format in which to expect text to analyze | `text` | `text`, `freeling`, `conll`
+`--output` | Output format to produce with analysis results | `freeling` | `freeling`, `conll`, `xml`, `json`, `naf`, `train`
+`--inplv` | Analysis level of input data (already tagged) | `text` | `text`, `token`, `splitted`, `morfo`, `tagged`, `shallow`, `dep`, `coref`
+`--outlv` | Analysis level of output data (to be tagged) | `tagged` | `token`, `splitted`, `morfo`, `tagged`, `shallow`, `parsed`, `dep`, `coref`, `semgraph`
+`--sense` | Kind of sense annotation to perform | `no` | `no`, `all`, `mfs`, `ukb`
+
+### Configuration files
+
+These are a series of customized files to ease the invokation of servers from the command line:
+
+- `en_nomwe.cfg` and `es_nomwe.cfg`: no module carrying out multiword expression detection is activated.
+- `en_mwe.cfg` and `es_mwe.cfg`: all modules carrying out multiword expression detection are activated.
+- `en_mwe_nec.cfg` and `es_mwe_nec.cfg`: like `*_mwe.cfg` but performing NEC.
+
+## Usage of freeling.py
 
 Once a server is up and running we can use `freeling.py` to process the files. Below is an explanation of the options that can be passed to the wrapper.
 
@@ -124,130 +142,336 @@ optional arguments:
 
 And this would be an example to process a text in English with an analyzer running with the default configuration:
 
-```
+```bash
 python freeling.py -s ./test/en/ -t ./test/en/output/ -p 50005 -f "*_w_sentences.xml" --sentence -e s -o vrt
 ```
 
-## Examples
+# Examples
 
-port | config | lang | command | requires | yields
----|---|---|---|---|---
-50100 | eng | eng.cfg | `analyze -f ~/Projects/freeling/config/eng1.cfg --sense ukb --server --port 50101 &` | token, lemma, POS | sense, WSD
-50200 | spa | spa.cfg | `analyze -f ~/Projects/freeling/config/spa1 .cfg --server --port 50201 &` | token, lemma, POS | sense, WSD
-50110 | eng | eng.cfg | `analyze -f ~/Projects/freeling/config/eng2.cfg --server --port 50106 &` | sentence | token, POS, lemma, probability
-50210 | spa | spa.cfg | `analyze -f ~/Projects/freeling/config/spa2.cfg --server --port 50202 &` | sentence | token, POS, lemma, probability
+List of my most frequent server configurations.
 
+port | command | requires | yields
+------|------------------------------------------------|------------|---------------
+50101 | `analyze -f ./config/en_nomwe.cfg --server --port 50101 &` | text | token, lemma, POS
+50102 | `analyze -f ./config/en_mwe.cfg --server --port 50102 &` | text | token, lemma, POS
+50103 | `analyze -f ./config/en_mwe_nec.cfg --server --port 50103 &` | text | token, lemma, POS
+50104 | `analyze -f ./config/en_mwe_nec.cfg --sense ukb --input freeling --inplv tagged --server --port 50104 &` | token, lemma, POS | WSD
+50105 | `analyze -f ./config/en_mwe_nec.cfg --input freeling --inplv tagged --outlv shallow --server --port 50105 &` | token, lemma, POS | constituency
+50106 | `analyze -f ./config/en_mwe_nec.cfg --input freeling --inplv tagged --outlv dep --server --port 50106 &` | token, lemma, POS | dependency
+50111 | `analyze -f ./config/en_nomwe.cfg --output conll --server --port 50101 &` | text | token, lemma, POS
+50112 | `analyze -f ./config/en_mwe.cfg --output conll --server --port 50102 &` | text | token, lemma, POS
+50113 | `analyze -f ./config/en_mwe_nec.cfg --output conll --server --port 50103 &` | text | token, lemma, POS
+50114 | `analyze -f ./config/en_mwe_nec.cfg --sense ukb --input freeling --inplv tagged --output conll --server --port 50104 &` | token, lemma, POS | WSD
+50115 | `analyze -f ./config/en_mwe_nec.cfg --input freeling --inplv tagged --outlv shallow --output conll --server --port 50105 &` | token, lemma, POS | constituency
+50116 | `analyze -f ./config/en_mwe_nec.cfg --input freeling --inplv tagged --outlv dep --output conll --server --port 50106 &` | token, lemma, POS | dependency
+50121 | `analyze -f ./config/en_nomwe.cfg --output xml --server --port 50101 &` | text | token, lemma, POS
+50122 | `analyze -f ./config/en_mwe.cfg --output xml --server --port 50102 &` | text | token, lemma, POS
+50123 | `analyze -f ./config/en_mwe_nec.cfg --output xml --server --port 50103 &` | text | token, lemma, POS
+50124 | `analyze -f ./config/en_mwe_nec.cfg --sense ukb --input freeling --inplv tagged --output xml --server --port 50104 &` | token, lemma, POS | WSD
+50125 | `analyze -f ./config/en_mwe_nec.cfg --input freeling --inplv tagged --outlv shallow --output xml --server --port 50105 &` | token, lemma, POS | constituency
+50126 | `analyze -f ./config/en_mwe_nec.cfg --input freeling --inplv tagged --outlv dep --output xml --server --port 50106 &` | token, lemma, POS | dependency
+50201 | `analyze -f ./config/es_nomwe.cfg --server --port 50201 &` | sentence | token, lemma, POS
+50202 | `analyze -f ./config/es_mwe.cfg --server --port 50202 &` | sentence | token, lemma, POS
+50203 | `analyze -f ./config/es_mwe_nec.cfg --server --port 50203 &` | sentence | token, lemma, POS
 
-### With MWEs
+## Token, lemma, POS without MWEs and sentences preannotated
 
-#### start the appropriate server
+### Output in FreeLing or VRT format
+
+#### start a server
 
 ```bash
-analyze -f ~/Projects/freeling/config/spa1.cfg --server --port 50201 &
+# English
+analyze -f ./config/en_nomwe.cfg --server --port 50101 &
+# Spanish
+analyze -f ./config/es_nomwe.cfg --server --port 50201 &
+```
+
+#### run the wrapper: output FLG
+
+```bash
+# English
+python freeling.py -s ./test/en/ -t ./test/en/tmp_output/nomwe -p 50101 -f "*w_sentences.xml" --sentence -e s -o flg
+# Spanish
+python freeling.py -s ./test/es/ -t ./test/es/tmp_output/nomwe -p 50201 -f "*w_sentences.xml" --sentence -e s -o flg
+```
+
+#### run the wrapper: output VRT
+
+```bash
+# English
+python freeling.py -s ./test/en/ -t ./test/en/tmp_output/nomwe -p 50101 -f "*w_sentences.xml" --sentence -e s -o vrt
+# Spanish
+python freeling.py -s ./test/es/ -t ./test/es/tmp_output/nomwe -p 50201 -f "*w_sentences.xml" --sentence -e s -o vrt
+```
+
+### Output in CONLL format
+
+#### start a server
+
+```bash
+# English
+analyze -f ./config/en_nomwe.cfg --output conll --server --port 50111 &
+# Spanish
+analyze -f ./config/es_nomwe.cfg --output conll --server --port 50211 &
+```
+
+#### run the wrapper: output CONLL
+
+```bash
+# English
+python freeling.py -s ./test/en/ -t ./test/en/tmp_output/nomwe -p 50111 -f "*w_sentences.xml" --sentence -e s -o conll
+# Spanish
+python freeling.py -s ./test/es/ -t ./test/es/tmp_output/nomwe -p 50211 -f "*w_sentences.xml" --sentence -e s -o conll
+```
+
+## Token, lemma, POS with MWEs, NEC and sentences preannotated
+
+### Output in FreeLing or VRT format
+
+#### start a server
+
+```bash
+# English
+analyze -f ./config/en_mwe_nec.cfg --server --port 50103 &
+# Spanish
+analyze -f ./config/es_mwe_nec.cfg --server --port 50203 &
+```
+
+#### run the wrapper: output FLG
+
+```bash
+# English
+python freeling.py -s en/ -t ./test/en/tmp_output/mwe -p 50103 -f "*w_sentences.xml" --sentence -e s -o flg
+# Spanish
+python freeling.py -s es/ -t ./test/es/tmp_output/mwe -p 50203 -f "*w_sentences.xml" --sentence -e s -o flg
+```
+
+#### run the wrapper: output VRT
+
+```bash
+# English
+python freeling.py -s en/ -t ./test/en/tmp_output/mwe -p 50103 -f "*w_sentences.xml" --sentence -e s -o vrt
+# Spanish
+python freeling.py -s es/ -t ./test/es/tmp_output/mwe -p 50203 -f "*w_sentences.xml" --sentence -e s -o vrt
+```
+
+### Output in CONLL format
+
+#### start a server
+
+```bash
+# English
+analyze -f ./config/en_mwe_nec.cfg --output conll --server --port 50113 &
+# Spanish
+analyze -f ./config/es_mwe_nec.cfg --output conll --server --port 50213 &
+```
+
+#### run the wrapper: output CONLL
+
+```bash
+# English
+python freeling.py -s ./test/en/ -t ./test/en/tmp_output/mwe -p 50103 -f "*w_sentences.xml" --sentence -e s -o conll
+# Spanish
+python freeling.py -s ./test/es/ -t ./test/es/tmp_output/mwe -p 50203 -f "*w_sentences.xml" --sentence -e s -o conll
+```
+
+## Token, sentence, lemma, POS without MWEs
+
+### Output in FreeLing or VRT format
+
+#### start a server
+
+```bash
+# English
+analyze -f ./config/en_nomwe.cfg --server --port 50101 &
+# Spanish
+analyze -f ./config/es_nomwe.cfg --server --port 50201 &
+```
+
+#### run the wrapper: output FLG
+
+```bash
+# English
+python freeling.py -s ./test/en/ -t ./test/en/tmp_output/nomwe -p 50101 -f "*wo_sentences.xml" -e p -o flg
+# Spanish
+python freeling.py -s ./test/es/ -t ./test/es/tmp_output/nomwe -p 50201 -f "*wo_sentences.xml" -e p -o flg
+```
+
+#### run the wrapper: output VRT
+
+```bash
+# English
+python freeling.py -s ./test/en/ -t ./test/en/tmp_output/nomwe -p 50101 -f "*wo_sentences.xml" -e p -o vrt
+# Spanish
+python freeling.py -s ./test/es/ -t ./test/es/tmp_output/nomwe -p 50201 -f "*wo_sentences.xml" -e p -o vrt
+```
+
+### Output in CONLL format
+
+#### start a server
+
+```bash
+# English
+analyze -f ./config/en_nomwe.cfg --output conll --server --port 50111 &
+# Spanish
+analyze -f ./config/es_nomwe.cfg --output conll --server --port 50211 &
+```
+
+#### run the wrapper: output CONLL
+
+```bash
+# English
+python freeling.py -s ./test/en/ -t ./test/en/tmp_output/nomwe -p 50101 -f "*wo_sentences.xml" -e p -o conll
+# Spanish
+python freeling.py -s ./test/es/ -t ./test/es/tmp_output/nomwe -p 50201 -f "*wo_sentences.xml" -e p -o conll
+```
+
+## Token, sentence, lemma, POS with MWES and NEC
+
+### Output in FreeLing or VRT format
+
+#### start a server
+
+```bash
+# English
+analyze -f ./config/en_nomwe.cfg --server --port 50103 &
+# Spanish
+analyze -f ./config/es_nomwe.cfg --server --port 50203 &
+```
+
+#### run the wrapper: output FLG
+
+```bash
+# English
+python freeling.py -s ./test/en/ -t ./test/en/tmp_output/nomwe -p 50103 -f "*wo_sentences.xml" -e p -o flg
+# Spanish
+python freeling.py -s ./test/es/ -t ./test/es/tmp_output/nomwe -p 50203 -f "*wo_sentences.xml" -e p -o flg
+```
+
+#### run the wrapper: output VRT
+
+```bash
+# English
+python freeling.py -s ./test/en/ -t ./test/en/tmp_output/nomwe -p 50103 -f "*wo_sentences.xml" -e p -o vrt
+# Spanish
+python freeling.py -s ./test/es/ -t ./test/es/tmp_output/nomwe -p 50203 -f "*wo_sentences.xml" -e p -o vrt
+```
+
+### Output in CONLL format
+
+#### start a server
+
+```bash
+# English
+analyze -f ./config/en_nomwe.cfg --output conll --server --port 50113 &
+# Spanish
+analyze -f ./config/es_nomwe.cfg --output conll --server --port 50213 &
+```
+
+#### run the wrapper: output CONLL
+
+```bash
+# English
+python freeling.py -s ./test/en/ -t ./test/en/tmp_output/nomwe -p 50113 -f "*wo_sentences.xml" -e p -o conll
+# Spanish
+python freeling.py -s ./test/es/ -t ./test/es/tmp_output/nomwe -p 50213 -f "*wo_sentences.xml" -e p -o conll
+```
+
+## WSD
+
+### Output in FreeLing or VRT format
+
+#### start server
+
+```bash
+# English
+analyze -f ./config/en_mwe_nec.cfg --sense ukb --input freeling --inplv tagged --server --port 50104 &
+# Spanish
+analyze -f ./config/es_mwe_nec.cfg --sense ukb --input freeling --inplv tagged --server --port 50204 &
+```
+
+#### run the wrapper: output FreeLing
+
+```bash
+# English
+python freeling.py -s ./test/en/tmp_output/mwe -t ./test/en/tmp_output/wsd -p 50104 -f "*.flg" -e p -o flg
+# Spanish
+python freeling.py -s ./test/es/tmp_output/mwe -t ./test/es/tmp_output/wsd -p 50204 -f "*.flg" -e p -o flg
+```
+
+#### run the wrapper: output VRT
+
+```bash
+# English
+python freeling.py -s ./test/en/tmp_output/mwe -t ./test/en/tmp_output/wsd -p 50104 -f "*.flg" -e p -o vrt
+# Spanish
+python freeling.py -s ./test/es/tmp_output/mwe -t ./test/es/tmp_output/wsd -p 50204 -f "*.flg" -e p -o vrt
+```
+
+### Output in CONLL
+
+#### start server
+
+```bash
+# English
+analyze -f ./config/en_mwe_nec.cfg --sense ukb --input freeling --inplv tagged --output conll --server --port 50114 &
+# Spanish
+analyze -f ./config/es_mwe_nec.cfg --sense ukb --input freeling --inplv tagged --output conll --server --port 50214 &
 ```
 
 #### run the wrapper
 
 ```bash
-python freeling.py -s ~/Dropbox/PhD/TraDiCorp/tt/ep2/ori/ -t ./freeling1 -p 50201 -f "*.xml" --sentence -e s
+# English
+python freeling.py -s ./test/en/tmp_output/mwe -t ./test/en/tmp_output/wsd -p 50114 -f "*.flg" -e p -o vrt
+# Spanish
+python freeling.py -s ./test/es/tmp_output/mwe -t ./test/es/tmp_output/wsd -p 50214 -f "*.flg" -e p -o vrt
 ```
 
-### Without MWEs
+## Shallow parsing
 
-FreeLing 2 is for us the annotation with all MWEs modules deactivated
+### Output in XML
 
-#### start the appropriate server
-
-```bash
-analyze -f ~/Projects/freeling/config/spa2.cfg --server --port 50202 &
-```
+#### start server
 
 #### run the wrapper
 
-```bash
-python freeling.py -s ~/Dropbox/PhD/TraDiCorp/tt/ep2/ori/ -t ./freeling2 -p 50202 -f "*.xml" --sentence -e s
-```
+### Output in CONLL
 
-## FreeLing 4
+#### start the server
 
-FreeLing 3 is for us the annotation with all MWEs modules deactivated and returning the parsed constituents tree
+#### run the wrapper
 
-### start the appropriate server
+## Dependency parsing
 
-```bash
-analyze -f /media/sf_Projects/freeling/config/eng4.cfg --inplv text --input text --outlv parsed --output xml --server --port 50107&
-```
+### Output in XML
 
-```bash
-analyze -f /media/sf_Projects/freeling/config/en.cfg --inplv text --input text --outlv parsed --output xml --server --port 50109&
-```
+#### start server
 
-or
+#### run the wrapper
 
-```bash
-analyze -f /media/sf_Projects/freeling/config/eng4.cfg --inplv text --input text --outlv parsed --output conll --server --port 50108&
-```
+### Output in CONLL
 
-### run the wrapper
+#### start the server
 
-```bash
-python freeling_constituents.py -s /media/sf_PhD/TraDiCorp/st/ori/ -t /media/sf_PhD/TraDiCorp/st/flg3/ -p 50107 -f "*.xml" --sentence -e s
-```
+#### run the wrapper
 
-```bash
-python freeling.py -s /media/sf_PhD/TraDiCorp/st/ori/ -t /media/sf_PhD/TraDiCorp/st/flg3/ -p 50108 -f "*.xml" --sentence -e s
-```
-
-## Specification
-
-The wrapper expects a FreeLing server running. The server can be invoked either using a configuration file or command line options. A combination of configuration file and command line options should offer full control.
-
-Requirements:
-
-- A command line argument parser
-- input file reader(s)
-- output file writer(s)
-- encapsulate in functions/classes
-
-## Input
-
-There are two aspects to consider regarding input: file format, expected FreeLing format.
-
-By file format I mean XML, plain text, VRT, TCF, FreeLing...
-
-By expected FreeLing format I mean which layers of annotation (in FreeLing output format) are expected by the analyzer as input. This information has to be provided to the server (at start-up time) and to the script to read/extract the information as required.
-
-By now, I would just use XML format. Until we are not done with the processing of the corpus, I would leave FreeLing output format as it is. Even for sentences. Once we finish, we can write a tool to transform the annotation into the appropriate final format. Moreover, we can run two parallel processes: MWE and non-MWE. Although this might be overkill.
-
-In the first run through FreeLing, I would use `<div>` as the greatest unit containing text. And let FreeLing split into sentences. For subsequent runs. We will use already assigned tokenisation and sentences following FreeLing convention.
-
-With this design and workflow decission we simplify the logic and leave all the responsability to the server we will start up. There might be just an option: sentence splitted or not. If text is sentence splitted (like right now) we don't need to worry about it, just look for sentence elements `<s>`. If it is not sentence splitted, then we need to indicate the element containing text to be processed and sentences identified `<p>` or `<div>`.
-
-In the end the output should be FreeLing friendly. And we can finish the sentence marking as XML element at the end of the FreeLing processing.
-
-Sentences will be just empty line separated.
-
-Once we are finished, we will produce other output formats.
-
-For as it is only relevant to know what strings we have to give to FreeLing.
-
-Expected string input is one token per line?
-
-## Testing
+# Testing
 
 Run:
 
-```shell
+```bash
 sh test/test_freeling.sh
 ```
 
-## TO DO / Wish list
+# TO DO / Wish list
 
 - readers/writers for different formats VRT, XML, TCF
 - implement output formats for processed text:
-    - `conll` (as outputed by FreeLing)
+    - `multilayer vrt` (output each layer of information in a separate VRT file)
 
-## Source of test texts
+# Source of test texts
 
 - English: [European Parliament debate intervention by Raül Romeva i Rueda](http://www.europarl.europa.eu/sides/getDoc.do?pubRef=-//EP//TEXT+CRE+20090504+ITEM-016+DOC+XML+V0//EN&query=INTERV&detail=1-088)
 - Spanish: [European Parliament debate intervention by Raül Romeva i Rueda](http://www.europarl.europa.eu/sides/getDoc.do?pubRef=-//EP//TEXT+CRE+20090504+ITEM-016+DOC+XML+V0//ES&query=INTERV&detail=1-088)
