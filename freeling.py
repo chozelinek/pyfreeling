@@ -139,7 +139,7 @@ class freelingWrapper(object):
 
 # for CWB encoding is not a problem if the XML is pretty,
 # there is an option to cope with it at encoding
-    def deprettyfy(self, tree):
+    def unprettify(self, tree):
         """Remove any indentation introduced by pretty print."""
         tree = etree.tostring(  # convert XML tree to string
             tree,
@@ -300,6 +300,6 @@ class freelingWrapper(object):
                                 s_element.text = u'\n{}\n'.format(sentence)
             if self.oformat == 'vrt':
                 self.flg_to_vrt(tree)
-            output = self.deprettyfy(tree)
+            output = self.unprettify(tree)
             self.serialize(output, i)
 print(freelingWrapper())
