@@ -145,7 +145,7 @@ class freelingWrapper(object):
             tree,
             encoding="utf-8",
             method="xml",
-            xml_declaration=True).decode()
+            xml_declaration=True).decode(encoding='UTF-8')
         tree = re.sub(  # remove trailing spaces before tag
             r"(\n) +(<)",
             r"\1\2",
@@ -197,6 +197,7 @@ class freelingWrapper(object):
         for sentence in sentences:
             sentence.text = re.sub(r' ', r'\t', sentence.text) # to get VRT directly
             sentence.text = re.sub(r'\t\d(\.\d+)?$', r'', sentence.text, flags=re.MULTILINE) # to remove probability
+            sentence.text = re.sub(r'^(.+?)\t(.+?)\t(.+?)$', r'\1\t\3\t\2', sentence.text, flags=re.MULTILINE) # to remove probability
         pass
     
     def get_leafs(self, sentence):
